@@ -1,0 +1,146 @@
+@page "/flashcards"
+@using AnkiCloneApp.Data;
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject DataService DataService
+
+<style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        height:  75vh; /* Full height of the viewport */
+    }
+
+    .flashcard {
+        width: 700px; /* Width of the flashcard */
+        height: 500px; /* Height of the flashcard */
+        background-color: white; /* Background color */
+        border: 1px solid #000; /* Border color and thickness */
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2); /* Shadow for 3D effect */
+        margin: 20px; /* Margin around the flashcard */
+        padding: 20px; /* Padding inside the flashcard */
+        display: flex; /* To center content inside the flashcard */
+        justify-content: center; /* Center content horizontally */
+        align-items: center; /* Center content horizontally */
+        font-size: 20px; /* Text size */
+    }
+    
+    .button-container {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+</style>
+
+
+<h3>Flashcard Page</h3>
+<div class="container">
+    @if (Flashcards.Any())
+    {
+        <div class="flashcard">
+            @if (_showAnswer == false) /* Check if should show the answer or not */
+            {
+                <p>@Flashcards[_currentIndex].getFront()</p>
+            }
+            else
+            {
+                <p>@Flashcards[_currentIndex].getBack()</p>
+            }
+        </div>
+        
+        <div class="button-container">
+            <button @onclick="FlipCard" style="background-color: #6f42c1; border-radius: 10px">Flip Card</button>
+            <button @onclick="PreviousCard" style="background-color: #6f42c1; border-radius: 10px">Previous</button>
+            <button @onclick="NextCard" style="background-color: #6f42c1; border-radius: 10px">Next Card</button>
+        </div>
+        <div class="button-container" style="padding: 20px">
+            <button style="background-color: #b32121; border-radius: 10px">Again</button>
+            <button style="background-color: #ffc720; border-radius: 10px">Hard</button>
+            <button style="background-color: #6c757d; border-radius: 10px">Neutral</button>
+            <button style="background-color: #0dcaf0; border-radius: 10px">Good</button>
+            <button style="background-color: #20c997; border-radius: 10px">Perfect</button>
+        </div>
+        <div class="button-container">
+            <button @onclick="ToggleFormVisibility" style="background-color: #6f42c1; border-radius: 10px">Add Card</button>
+            @if (showForm)
+            {
+                <form>
+                    <div>
+                        <label for="_frontCardInput">Front</label>
+                        <input type="text" id="_frontCardInput" @bind="_frontCardInput" />
+                    </div>
+                    <div>
+                        <label for="_backCardInput">Back</label>
+                        <input type="text" id="_backCardInput" @bind="_backCardInput" />
+                    </div>
+                    <button @onclick="SubmitCard" type="submit">Submit Card</button>
+                </form>
+            }
+        </div>
+    }
+    else
+    {
+        <p>Deck is empty.</p>
+    }
+</div>
+
+
+@code {
+    
+    private IList<Flashcard> Flashcards { get; set; } = new List<Flashcard>();
+    private int _currentIndex;
+    private bool _showAnswer;
+    private bool showForm = false;
+    
+    /* Add card variables */
+    private string _frontCardInput = "";
+    private string _backCardInput = "";
+    
+    /* Methods */
+    protected override void OnInitialized()
+    {
+        
+        /* Place holder flash cards*/
+        Flashcards.Add(new Flashcard{FrontData = "Test Back One", BackData = "Test Back One"});
+        Flashcards.Add(new Flashcard{FrontData = "Test Back Two", BackData = "Test Back Two"});
+        Flashcards.Add(new Flashcard{ FrontData = "Test Front three", BackData = "Test Back Three"});
+        
+        /* Set showAnswer to false and the current card to zero if there is a deck present */
+        _showAnswer = false;
+        if (Flashcards.Any())
+        {
+            _currentIndex = 0;
+        }
+    }
+
+    void SubmitCard()
+    {
+        var flashcard = new Flashcard { FrontData = _frontCardInput, BackData = _backCardInput, Revisions = 0, NextRevisionDate = DateOnly.FromDateTime(DateTime.Now), CreationDate = DateOnly.FromDateTime(DateTime.Now)};
+        DataService.AddCard(flashcard);
+    }
+
+    void ToggleFormVisibility()
+    {
+        showForm = !showForm;
+    }
+
+    void NextCard()
+    {
+        if (_currentIndex < Flashcards.Count - 1) _currentIndex++;
+        _showAnswer = false;
+    }
+
+    void PreviousCard()
+    {
+        if (_currentIndex > 0) _currentIndex--;
+        _showAnswer = false;
+    }
+
+    void FlipCard()
+    {
+        if (_showAnswer == false) _showAnswer = true;
+        else _showAnswer = false;
+    }
+}
