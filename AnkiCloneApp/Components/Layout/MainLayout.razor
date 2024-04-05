@@ -1,13 +1,17 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="container-fluid" style="background-color: #75fff5">
+            <div class="navbar-brand" style="text-align: center; font-style: italic">AnkiCloneApp</div>
         </div>
+        
+        <div class="top-row px-4" style="display: flex; justify-content: flex-start">
+            <NavLink class="nav-link" href="">Home</NavLink>
+            <NavLink class="nav-link" href="">Decks</NavLink>
+            <NavLink class="nav-link" href="flashcards">Flashcards</NavLink>
+        </div>
+
         <article class="content px-4">
             @Body
         </article>
@@ -18,4 +22,4 @@
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
-</div>
+</div> 

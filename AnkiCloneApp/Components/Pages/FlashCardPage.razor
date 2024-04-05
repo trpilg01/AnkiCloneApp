@@ -1,8 +1,10 @@
 @page "/flashcards"
+@page "/flashcards/{CurrDeckId:int}"
 @using AnkiCloneApp.Data;
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 @inject DataService DataService
+
 
 <style>
     .container {
@@ -36,17 +38,27 @@
 
 
 <h3>Flashcard Page</h3>
+<div class="row" style="justify-content: flex-end; padding: 20px">
+    <!-- Bind value of current deck to CurrDeckID -->
+    <select name="DeckChoices" @bind-value="CurrDeckId" @bind-value:event="oninput">
+        @foreach (var deck in deckService.DeckList)
+        {
+            <option value="@deck.DeckId">@deck.Name</option>
+        }
+    </select>
+</div>
+
 <div class="container">
     @if (Flashcards.Any())
     {
         <div class="flashcard">
             @if (_showAnswer == false) /* Check if should show the answer or not */
             {
-                <p>@Flashcards[_currentIndex].getFront()</p>
+                <p>@Flashcards[_currentIndex].GetFront()</p>
             }
             else
             {
-                <p>@Flashcards[_currentIndex].getBack()</p>
+                <p>@Flashcards[_currentIndex].GetBack()</p>
             }
         </div>
         
@@ -64,7 +76,7 @@
         </div>
         <div class="button-container">
             <button @onclick="ToggleFormVisibility" style="background-color: #6f42c1; border-radius: 10px">Add Card</button>
-            @if (showForm)
+            @if (_showForm)
             {
                 <form>
                     <div>
@@ -74,6 +86,15 @@
                     <div>
                         <label for="_backCardInput">Back</label>
                         <input type="text" id="_backCardInput" @bind="_backCardInput" />
+                    </div>
+                    <div>
+                        <label>Deck: </label>
+                        <select @bind="_selectedAddCardDeckId">
+                            @foreach (var deck in deckService.DeckList)
+                            {
+                                <option value="@deck.DeckId">@deck.Name</option>
+                            }
+                        </select>
                     </div>
                     <button @onclick="SubmitCard" type="submit">Submit Card</button>
                 </form>
@@ -89,41 +110,106 @@
 
 @code {
     
+    /* Flashcard Variables */
     private IList<Flashcard> Flashcards { get; set; } = new List<Flashcard>();
     private int _currentIndex;
     private bool _showAnswer;
-    private bool showForm = false;
     
+    /* Deck Variables */
+    private DeckService deckService;
+    private int _selectedAddCardDeckId;
+    private int _currDeckId;
+    
+    [Parameter]
+    public int CurrDeckId { get => _currDeckId;
+        set
+        {
+            if (_currDeckId != value)
+            {
+                _currDeckId = value;
+                _ = OnDeckSelectionChanged();
+            }
+        } 
+    }
+
+
     /* Add card variables */
+    private bool _showForm = false;
     private string _frontCardInput = "";
     private string _backCardInput = "";
     
+    
     /* Methods */
-    protected override void OnInitialized()
+    private async Task OnDeckSelectionChanged()
     {
-        
-        /* Place holder flash cards*/
-        Flashcards.Add(new Flashcard{FrontData = "Test Back One", BackData = "Test Back One"});
-        Flashcards.Add(new Flashcard{FrontData = "Test Back Two", BackData = "Test Back Two"});
-        Flashcards.Add(new Flashcard{ FrontData = "Test Front three", BackData = "Test Back Three"});
-        
-        /* Set showAnswer to false and the current card to zero if there is a deck present */
-        _showAnswer = false;
+        // Fetch flashcards for the selected deck
+        Flashcards = await DataService.GetFlashCardsAsync(CurrDeckId);
         if (Flashcards.Any())
         {
             _currentIndex = 0;
+            _showAnswer = false;
         }
+        else
+        {
+            _currentIndex = -1;
+        }
+        
+        StateHasChanged(); // Request UI update
+    }
+
+    protected override void OnInitialized()
+    {
+        deckService = new DeckService();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        deckService = new DeckService() { DeckList = await DataService.GetDecksAsync() };
+        CurrDeckId = deckService.DeckList[0].DeckId;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            if (CurrDeckId > 0)
+            {
+                await LoadFlashCards(CurrDeckId);
+            }
+            else
+            {
+                await LoadFlashCards(deckService.DeckList[0].DeckId);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        await LoadFlashCards(CurrDeckId);
+    }
+    
+    private async Task LoadFlashCards(int deckId)
+    {
+        Flashcards = await DataService.GetFlashCardsAsync(deckId);
+        Console.WriteLine("Function LoadFlashCards called");
+        if (Flashcards.Any())
+        {
+            _currentIndex = 0;
+            _showAnswer = false;
+        }
+        StateHasChanged();
     }
 
     void SubmitCard()
     {
-        var flashcard = new Flashcard { FrontData = _frontCardInput, BackData = _backCardInput, Revisions = 0, NextRevisionDate = DateOnly.FromDateTime(DateTime.Now), CreationDate = DateOnly.FromDateTime(DateTime.Now)};
+        var flashcard = new Flashcard { FrontData = _frontCardInput, BackData = _backCardInput, Revisions = 0, NextRevisionDate = DateOnly.FromDateTime(DateTime.Now), CreationDate = DateOnly.FromDateTime(DateTime.Now), DeckId = _selectedAddCardDeckId};
         DataService.AddCard(flashcard);
     }
 
     void ToggleFormVisibility()
     {
-        showForm = !showForm;
+        _showForm = !_showForm;
     }
 
     void NextCard()

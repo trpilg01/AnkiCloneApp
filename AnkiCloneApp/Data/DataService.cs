@@ -10,40 +10,48 @@ public class DataService
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection");
     }
-
-    /* Get Flashcards from deck. Will need to alter this to get cards with specific dates. */
-    public List<Flashcard> GetFlashCards()
+    
+    /* Get Flashcards by DeckId. Will need to alter function to search by review date */
+    public async Task<List<Flashcard>> GetFlashCardsAsync(int deckID)
     {
         var list = new List<Flashcard>();
 
         using (var connection = new MySqlConnection(_connectionString))
         {
-            connection.Open();
-            var command = new MySqlCommand("SELECT * FROM CardInfo", connection);
-            using (var reader = command.ExecuteReader())
+            await connection.OpenAsync();
+            using (var command = new MySqlCommand("SELECT * FROM CardInfo WHERE DeckID = @deckId", connection))
             {
-                try
+                command.Parameters.AddWithValue("@deckId", deckID);
+                using (var reader = await command.ExecuteReaderAsync())
                 {
-                    while (reader.Read())
+                    try
                     {
-                        int id = (int)reader["ID"];
-                        string frontData = (string)reader["FrontData"];
-                        string backData = (string)reader["BackData"];
-                        DateOnly creationDate = (DateOnly)reader["CreationDate"];
-                        DateOnly revisionDate = (DateOnly)reader["RevisionDate"];
-                        int revisions = (int)reader["Revisions"];
-
-                        var flashcard = new Flashcard
+                        while (await reader.ReadAsync())
                         {
-                            FrontData = frontData, BackData = backData, ID = id, CreationDate = creationDate,
-                            NextRevisionDate = revisionDate, Revisions = revisions
-                        };
-                        list.Add(flashcard);
+                            /* Read Variables */
+                            int id = (int)reader["ID"];
+                            string frontData = (string)reader["FrontData"];
+                            string backData = (string)reader["BackData"];
+                            DateOnly creationDate = DateOnly.FromDateTime((DateTime)reader["CreationDate"]);
+                            DateOnly revisionDate = DateOnly.FromDateTime((DateTime)reader["RevisionDate"]);
+                            int revisions = (int)reader["Revisions"];
+    
+                            /* Create Flashcard */
+                            var flashcard = new Flashcard
+                            {
+                                FrontData = frontData, BackData = backData, Id = id, CreationDate = creationDate,
+                                NextRevisionDate = revisionDate, Revisions = revisions, DeckId = deckID
+                            };
+                        
+                            /* Add flashcard to list */
+                            list.Add(flashcard);
+                        }
+                        Console.WriteLine("Flashcards successfully loaded");
                     }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                 }
             }
         }
@@ -53,6 +61,7 @@ public class DataService
     /* Add new card to deck */
     public void AddCard(Flashcard flashcard)
     {
+        Console.WriteLine(flashcard.DeckId);
         using (var connection = new MySqlConnection(_connectionString))
         {
             try
@@ -61,24 +70,23 @@ public class DataService
 
                 using (var command =
                        new MySqlCommand(
-                           "INSERT INTO CardInfo (ID, FrontData, BackData, CreationDate, RevisionDate, Revisions) VALUES (@id, @frontData, @backData, @creationDate, @revisionDate, @revisions)",
+                           "INSERT INTO CardInfo (FrontData, BackData, CreationDate, RevisionDate, Revisions, DeckID) VALUES (@frontData, @backData, @creationDate, @revisionDate, @revisions, @deckID)",
                            connection))
                 {
                     /* Reformat Dates to fit SQL format */
-                    string formattedCreationDated = flashcard.CreationDate.ToString("yy-MM-dd");
-                    string formattedRevisionDate = flashcard.NextRevisionDate.ToString("yy-MM-dd");
+                    string formattedCreationDated = flashcard.CreationDate.ToString("yyyy-MM-dd");
+                    string formattedRevisionDate = flashcard.NextRevisionDate.ToString("yyyy-MM-dd");
                     
                     /* Add values to query parameters */
-                    command.Parameters.AddWithValue("@id", flashcard.ID);
                     command.Parameters.AddWithValue("@frontData", flashcard.FrontData);
                     command.Parameters.AddWithValue("@backData", flashcard.BackData);
                     command.Parameters.AddWithValue("@creationDate", formattedCreationDated);
                     command.Parameters.AddWithValue("@revisionDate", formattedRevisionDate);
                     command.Parameters.AddWithValue("@revisions", flashcard.Revisions);
+                    command.Parameters.AddWithValue("@deckID", flashcard.DeckId);
                     
-                    command.ExecuteNonQuery(); // Execute query 
-
-                    Console.WriteLine("Data Inserted succesfully.");
+                    command.ExecuteNonQuery(); // Execute
+                    
                 }
             }
             catch (Exception ex)
@@ -87,4 +95,75 @@ public class DataService
             }
         }
     }
+    
+    /* Add new Deck */
+    public void AddDeck(string name)
+    {
+        string formattedDate = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            try
+            {
+                connection.Open();
+                using (var command = new MySqlCommand("INSERT INTO Decks (Name, CreationDate) VALUES (@Name, @CreationDate)", connection))
+                {
+                    command.Parameters.AddWithValue("@Name", name);
+                    command.Parameters.AddWithValue("@CreationDate", formattedDate);
+                    command.ExecuteNonQuery();
+                    
+                }
+                Console.WriteLine("Decks successfully loaded.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occured: {ex.Message}");
+            }
+        }
+    }
+    
+    public async Task<List<Deck>> GetDecksAsync()
+    {
+        var deckList = new List<Deck>();
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            try
+            {
+                await connection.OpenAsync();
+                using (var command = new MySqlCommand("SELECT * FROM Decks", connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var name = (string)reader["Name"];
+                            var id = (int)reader["DeckID"];
+                            var creationDate = DateOnly.FromDateTime((DateTime)reader["CreationDate"]);
+
+                            DateOnly lastReviewed;
+                            if (!reader.IsDBNull(2))
+                            {
+                                lastReviewed = DateOnly.FromDateTime((DateTime)reader["LastReviewed"]);
+                                var deck = new Deck
+                                    { Name = name, DeckId = id, CreationDate = creationDate, LastReviewed = lastReviewed };
+                                deckList.Add(deck);
+                            }
+                            else
+                            {
+                                var deck = new Deck { Name = name, DeckId = id, CreationDate = creationDate };
+                                deckList.Add(deck);
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine("Data successfully inserted.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occured: {ex.Message}");
+            }
+        }
+        return deckList;
+    }
+    
+    
 }

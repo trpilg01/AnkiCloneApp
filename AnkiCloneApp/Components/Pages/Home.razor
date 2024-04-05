@@ -1,9 +1,93 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using AnkiCloneApp.Data
+@inject DataService DataService
+@inject NavigationManager NavigationManager
+
+<style>
+    .no-bullets {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+</style>
 
 <PageTitle>Home</PageTitle>
 
-<h1>A spaced repetition flashcard app.</h1>
-<h2>Decks</h2>
-<div class="container">
-    <div class="d-xxl-grid" style="padding: 10px"></div>
+<h3 style="text-align: center; text-decoration: underline">Decks</h3>
+
+<div class="container" style="padding: 5px">
+    <h4 style="padding: 5px;">Regular Flashcard Decks</h4>
+    <button @onclick="ToggleAddDeckVisibility">Add Deck</button>
+    @if (_showAddDeckField)
+    {
+        <div class="button-container">
+            <form>
+
+                <div>
+                    <label for="_addDeckName">Name</label>
+                    <input type="text" id="_addDeckName" @bind="_addDeckName"/>
+                </div>
+
+                <button @onclick="SubmitDeck" type="submit">Enter</button>
+            </form>
+        </div>
+    }
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Deck</th>
+            <th>Last Reviewed</th>
+            <th style="text-align: right"></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var deck in _deckService.DeckList)
+        {
+            <tr>
+                <td>@deck.Name</td>
+                @if (deck.LastReviewed.Year > 2023)
+                {
+                    <td>@deck.LastReviewed</td>
+                }
+                else
+                {
+                    <td style="justify-content: center"></td>
+                }
+                
+                <button @onclick="() => ReviewDeck(deck.DeckId)" class="nav-link" href="flashcards" style="border-radius: 5px;height: min-content;text-align: end" >Review</button>
+            </tr>
+        }
+        </tbody>
+    </table>
 </div>
+
+
+@code{
+    
+    private string _addDeckName = "";
+    private bool _showAddDeckField = false;
+    private DeckService _deckService; // Could possibly remove DeckService class all together.
+
+    protected override async Task OnInitializedAsync()
+    {
+        _deckService = new DeckService();
+        _deckService.DeckList = await DataService.GetDecksAsync(); // Could replace with a List<Deck>
+    }
+    
+    void ToggleAddDeckVisibility()
+    {
+        _showAddDeckField = true;
+    }
+
+    void SubmitDeck()
+    {
+        DataService.AddDeck(_addDeckName);
+    }
+
+    void ReviewDeck(int deckId)
+    {
+        NavigationManager.NavigateTo($"/flashcards/{deckId}");
+    }
+}

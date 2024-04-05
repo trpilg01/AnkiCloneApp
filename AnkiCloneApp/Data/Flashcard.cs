@@ -11,16 +11,23 @@ public class Flashcard
     private int _revisions { get; set; }
     private DateOnly _nextReviewDate { get; set; }
     private DateOnly _creationDate { get; set; }
-    
     private double _eFactor { get; set; }
 
+    private int _deckID { get; set; }
+
+    public int DeckId
+    {
+        get { return _deckID; }
+        set { _deckID = value; }
+    }
+    
     public double EFactor
     {
         get { return _eFactor; }
         set { _eFactor = value; }
     }
     
-    public int ID
+    public int Id
     {
         get { return _id; }
         set { _id = value; }
@@ -51,12 +58,12 @@ public class Flashcard
         set { _creationDate = value; }
     }
     
-    public string getFront()
+    public string GetFront()
     {
         return _frontData;
     }
 
-    public string getBack()
+    public string GetBack()
     {
         return _backData;
     }
