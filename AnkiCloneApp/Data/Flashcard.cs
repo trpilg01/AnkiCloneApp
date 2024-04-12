@@ -1,6 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
-using System.Runtime;
-
 namespace AnkiCloneApp.Data;
 
 public class Flashcard
@@ -8,25 +5,28 @@ public class Flashcard
     private int _id { get; set; }
     private string _frontData { get; set; } 
     private string _backData { get; set; }
-    private int _revisions { get; set; }
+    private int _revisions { get; set; } = 0;
     private DateOnly _nextReviewDate { get; set; }
     private DateOnly _creationDate { get; set; }
-    private double _eFactor { get; set; }
-
+    private double _eFactor { get; set; } = 2.5;
+    private double _interval { get; set; } = 1;
     private int _deckID { get; set; }
 
+    public double Interval
+    {
+        get { return _interval;}
+        set { _interval = value; }
+    }
     public int DeckId
     {
         get { return _deckID; }
         set { _deckID = value; }
     }
-    
     public double EFactor
     {
         get { return _eFactor; }
         set { _eFactor = value; }
     }
-    
     public int Id
     {
         get { return _id; }

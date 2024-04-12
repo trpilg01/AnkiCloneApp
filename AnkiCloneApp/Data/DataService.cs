@@ -166,4 +166,34 @@ public class DataService
     }
     
     
+    /* Updates Card's Revision Date */
+    public void UpdateCardDate(Flashcard flashcard)
+    {
+        string formattedRevisionDate = flashcard.NextRevisionDate.ToString("yyyy-MM-dd");
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            try
+            {
+                connection.Open();
+                using (var command =
+                       new MySqlCommand("UPDATE CardInfo " +
+                                        "SET RevisionDate = @revisionDate, Revisions = @revisions " +
+                                        "WHERE ID = @id",
+                           connection))
+                {
+                    command.Parameters.AddWithValue("@revisionDate", formattedRevisionDate);
+                    command.Parameters.AddWithValue("@revisions", flashcard.Revisions);
+                    command.Parameters.AddWithValue("@id", flashcard.Id);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+        }
+    }
 }

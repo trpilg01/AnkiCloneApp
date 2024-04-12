@@ -9,33 +9,48 @@ public class FlashcardService
         _flashcards = new List<Flashcard>();
     }
 
-    public void AddCard(Flashcard card)
+    public void AddCard(Flashcard card) // Useless method. Could delete
     {
         _flashcards.Add(card);
     }
 
-    public void SetEFactor(Flashcard flashcard, float responseQuality)
+    public void UpdateFlashcard(Flashcard card, int quality)
     {
-        flashcard.EFactor = flashcard.EFactor + (0.1 - (5 - responseQuality) * (0.08 + (5 - responseQuality) * 2));
-    }
+        if (quality < 0 || quality > 5)
+            throw new AggregateException("Quality must be between 0 and 5.");
+        
+        // If the response is correct (quality >= 3), apply the SM-2 algorithm
+        if (quality >= 3)
+        {
+            // First Revision
+            if (card.Revisions == 0)
+            {
+                card.Interval = 1;
+            }
+            // Second Revision
+            else if (card.Revisions == 1)
+            {
+                card.Interval = 6;
+            }
+            // Subsequent Revisions
+            else
+            {
+                card.Interval *= card.EFactor;
+            }
 
-    public void SetRevisionDate(Flashcard flashcard)
-    {
-        if (flashcard.Revisions == 0)
-        {
-            flashcard.NextRevisionDate = flashcard.CreationDate;
+            card.Revisions++;
         }
-        else if (flashcard.Revisions == 1)
+        else
         {
-            flashcard.NextRevisionDate = flashcard.CreationDate.AddDays(1);
+            // Reset repetition for incorrect responses, but don't reset EFactor
+            card.Revisions = 0;
+            card.Interval = 1;
         }
-        else if (flashcard.Revisions == 2)
-        {
-            flashcard.NextRevisionDate = DateOnly.FromDateTime(DateTime.Today.AddDays(6));
-        }
-        else if (flashcard.Revisions > 2)
-        {
-            flashcard.NextRevisionDate = DateOnly.FromDateTime(DateTime.Today.AddDays((flashcard.Revisions - 1) * flashcard.EFactor));
-        }
+
+        // Adjust EFactor, but ensure it's mpt less than 1.3
+        card.EFactor = Math.Max(1.3, card.EFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
+        
+        // Set the next review date
+        card.NextRevisionDate = DateOnly.FromDateTime(DateTime.Now.AddDays(card.Interval));
     }
 }

@@ -8,6 +8,7 @@ public class Deck
     private DateOnly _creationDate { get; set; }
     private DateOnly _lastReviewed;
     public List<Flashcard> Cards;
+    public List<Flashcard> DueToday;
     
     /* Getters and Setters */
     public string Name
@@ -35,16 +36,26 @@ public class Deck
     }
     
     /* Methods */
-    public Deck(string name)
+    public Deck(string name) // Remove this?
     {
         _name = name;
         Cards = new List<Flashcard>();
+        DueToday = GetDueToday();
     }
     public Deck(){}
 
-    public void AddCardToDeck(Flashcard flashcard)
+    /* Get flashcards due today */
+    public List<Flashcard> GetDueToday()
     {
-        Cards.Add(flashcard);
-    }
+        List<Flashcard> flashcards = new List<Flashcard>();
+        foreach (var card in Cards)
+        {
+            if (card.NextRevisionDate == DateOnly.FromDateTime(DateTime.Now))
+            {
+                flashcards.Add(card);
+            }
+        }
 
+        return flashcards;
+    }
 }

@@ -3,6 +3,7 @@ namespace AnkiCloneApp.Data;
 
 public class DeckService
 {
+    /* Should probably delete this class */
     private List<Deck> _deckList { get; set; }
 
     public List<Deck> DeckList
