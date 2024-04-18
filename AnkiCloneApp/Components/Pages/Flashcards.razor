@@ -1,0 +1,103 @@
+@page "/Flashcards"
+@rendermode InteractiveServer
+@using AnkiCloneApp.Data
+@inject DataService DataService
+
+<style>
+    body, html{
+        height: 100%;
+        margin: 0;
+        background: linear-gradient(to top right, rgba(139,57,255,0.87) , rgba(13,12,89,0.87));
+    }
+    .full-width-table{
+        width: 100%;
+        table-layout: fixed;
+        margin: 0;
+        max-width: fit-content(100%);
+    }
+</style>
+
+<div class="container" style="background-color: white; border-radius: 20px; padding: 10px; text-align: center">
+    <h3 style="text-align: center">All Flashcards</h3>
+    
+    <div>
+        <button class="btn btn-primary" @onclick="EnableEditing">Edit Cards</button>
+    </div>
+    
+    @if (_allCards.Any())
+    {
+        <table class="table table-bordered" style="max-width: inherit; padding: 10px">
+            <thead>
+            <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Front</th>
+                <th scope="col">Back</th>
+                <th scope="col">Revisions</th>
+                <th scope="col">Delete</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            @foreach (var card in _allCards)
+            {
+                @if (!enableEditing) // Default unless Edit Cards button clicked
+                {
+                    <tr>
+                        <th scope="row">@card.Id</th>
+                        <td>@card.FrontData</td>
+                        <td>@card.BackData</td>
+                        <td>@card.Revisions</td>
+                        <td><button class="btn btn-link" @onclick="() => DeleteCard(card)">Delete</button></td>
+                    </tr>
+                }
+                else // Edit cards
+                {
+                    <tr>
+                        <th scope="row">@card.Id</th>
+                        <td>
+                            <textarea id="frontContent" @bind="@card.FrontData"></textarea>
+                        </td>
+                        <td>
+                            <textarea id="backContent" @bind="@card.BackData"></textarea>
+                        </td>
+                        <td>@card.Revisions</td>
+                        <td><button class="btn btn-link">Delete</button></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+        
+        @if (enableEditing)
+        {
+            <button class="btn btn-secondary">Save Changes</button>
+        }
+    }
+    else
+    {
+        <a>No flashcards saved</a>
+    }
+</div>
+
+@code {
+    private List<Flashcard> _allCards = new List<Flashcard>();
+    private bool enableEditing;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _allCards = await DataService.GetAllCardsAsync();
+        enableEditing = false;
+    }
+
+    void EnableEditing()
+    {
+        enableEditing = !enableEditing;
+        Console.WriteLine("True");
+    }
+
+    void DeleteCard(Flashcard card)
+    {
+        _allCards.Remove(card);
+        DataService.DeleteCard(card);
+    }
+}

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AnkiCloneApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+356fbc304d7817c8833f74751a13c2451c36e307")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fd665f04c98e11f3316fcf899a8944a7ac4c55bb")]
 [assembly: System.Reflection.AssemblyProductAttribute("AnkiCloneApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AnkiCloneApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

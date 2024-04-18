@@ -26,12 +26,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9FcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Pages/FlashCardPage.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9GbGFzaENhcmRQYWdlLnJhem9y
+[/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Pages/Flashcards.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9GbGFzaGNhcmRzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Pages/ReviewPage.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9SZXZpZXdQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Routes.razor]
@@ -45,7 +49,3 @@ build_metadata.AdditionalFiles.CssScope =
 [/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTWFpbkxheW91dC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-55nvupqqmq
-
-[/home/thomas/RiderProjects/AnkiCloneApp/AnkiCloneApp/Components/Layout/NavMenu.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTmF2TWVudS5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = b-0itufainfb

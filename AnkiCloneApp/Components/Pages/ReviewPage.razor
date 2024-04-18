@@ -1,0 +1,281 @@
+@page "/review"
+@page "/review/{SelectedDeckId:int}"
+@using AnkiCloneApp.Data;
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject DataService DataService
+
+
+<style>
+    .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        height:  75vh; /* Full height of the viewport */
+    }
+
+    body, html{
+        height: 100%;
+        margin: 0;
+        background: linear-gradient(to top right, rgba(139,57,255,0.87) , rgba(13,12,89,0.87));
+    }
+
+    .flashcard {
+        width: 700px; /* Width of the flashcard */
+        height: 500px; /* Height of the flashcard */
+        background-color: white; /* Background color */
+        border: 1px solid #000; /* Border color and thickness */
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2); /* Shadow for 3D effect */
+        margin: 20px; /* Margin around the flashcard */
+        padding: 20px; /* Padding inside the flashcard */
+        display: flex; /* To center content inside the flashcard */
+        justify-content: center; /* Center content horizontally */
+        align-items: center; /* Center content horizontally */
+        font-size: 20px; /* Text size */
+    }
+    
+    .button-container {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+</style>
+
+<div class="container" style="background-color: white; border-radius: 20px">
+    <div class="container">
+        <h3 style="text-align: center">Deck Name Placeholder</h3>
+        <div class="row" style="height: 100%">
+
+            <!-- Add and Delete buttons -->
+            <div class="col-sm" style="text-align: center">
+                <button type="button" class="btn btn-danger" style="padding: 5px" @onclick="DeleteCurrentCard">Delete Card</button>
+                <div class="btn-group-vertical" role="group" style="vertical-align: center; margin: auto; padding: 5px">
+                    <button type="button" class="btn btn-primary" @onclick="ToggleFormVisibility">Add Card</button>
+                    @if (_showForm)
+                    {
+                        <form>
+                            <div>
+                                <label for="_frontCardInput">Front</label>
+                                <input type="text" id="_frontCardInput" @bind="_frontCardInput"/>
+                            </div>
+                            
+                            <div>
+                                <label for="_backCardInput">Back</label>
+                                <input type="text" id="_backCardInput" @bind="_backCardInput"/>
+                            </div>
+                            
+                            <div>
+                                <label>Deck: </label>
+                                <select @bind="_selectedAddCardDeckId">
+                                    @foreach (var deck in _deckService.DeckList)
+                                    {
+                                        <option value="@deck.DeckId">@deck.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <button @onclick="SubmitCard" type="submit">Submit Card</button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <!-- Actual flashcard buttons -->
+            <div class="col-lg" style="text-align: center">
+                @if (CurrentDeck.DueToday.Any())
+                {
+                    <div class="flashcard">
+                        @if (_showAnswer == false) /* Check if should show the answer or not */
+                        {
+                            <p>@CurrentDeck.DueToday[_currentIndex].GetFront()</p>
+                        }
+                        else
+                        {
+                            <p>@CurrentDeck.DueToday[_currentIndex].GetBack()</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p>Deck is empty.</p>
+                }
+                <div class="btn-group" style="align-items: center">
+                    <button class="btn btn-primary" @onclick="PreviousCard">Previous</button>
+                    <button class="btn btn-secondary" @onclick="FlipCard">Flip Card</button>
+                    <button class="btn btn-primary" @onclick="NextCard">Next Card</button>
+                </div>
+            </div>
+
+            <div class="col-sm" style="align-content: center">
+                <!-- Quality score buttons-->
+                <div class="btn-group-vertical" role="group">
+                    <button type="button" class="btn btn-success" @onclick="() => { _qualityScore = 5; }">Perfect</button>
+                    <button type="button" class="btn btn-info" @onclick="() => { _qualityScore = 4; }">Good</button>
+                    <button type="button" class="btn btn-secondary" @onclick="() => { _qualityScore = 3; }">Neutral</button>
+                    <button type="button" class="btn btn-warning" @onclick="() => { _qualityScore = 2; }">Hard</button>
+                    <button type="button" class="btn btn-danger" @onclick="() => { _qualityScore = 1; }">Again</button>
+                    <button type="button" class="btn btn-dark" @onclick="SubmitAnsweredCard" style="padding-top: 10px">Submit</button>
+                </div>
+            </div>
+        </div>
+    
+    </div>
+</div>
+
+@code {
+    
+    /* Flashcard Variables */
+    private Deck CurrentDeck { get; set; } = new Deck { Cards = new List<Flashcard>(), DueToday = new List<Flashcard>()};
+    private readonly FlashcardService _flashcardService = new FlashcardService();
+    private int _currentIndex;
+    private bool _showAnswer;
+    private int _qualityScore = -1;
+    
+    /* Deck Variables */
+    private DeckService _deckService = new DeckService(); // Only used to get list of decks
+    private int _selectedAddCardDeckId; // need to change name
+    private int _selectedDeckId;
+    
+    [Parameter]
+    public int SelectedDeckId { get => _selectedDeckId;
+        set
+        {
+            if (_selectedDeckId != value)
+            {
+                _selectedDeckId = value;
+                _ = OnDeckSelectionChanged();
+            }
+        } 
+    }
+
+    /* Add card variables */
+    private bool _showForm = false;
+    private string _frontCardInput = "";
+    private string _backCardInput = "";
+    
+    /* Methods */
+    private void DeleteCurrentCard()
+    {
+        DataService.DeleteCard(CurrentDeck.Cards[_currentIndex]);
+        if (_currentIndex < CurrentDeck.Cards.Count - 1) // Remove card and 
+        {
+            CurrentDeck.Cards.Remove(CurrentDeck.Cards[_currentIndex]);
+            NextCard();
+        }
+        else // if at last card in deck subtract current index by one then delete the card
+        {
+            int deletedCardIndex = _currentIndex;
+            _currentIndex--;
+            CurrentDeck.Cards.Remove(CurrentDeck.Cards[deletedCardIndex]);
+        }
+    }
+    
+    private void SubmitAnsweredCard() // Update current card's review date
+    {
+        if (_qualityScore > -1)
+        {
+            _flashcardService.UpdateFlashcard(CurrentDeck.Cards[_currentIndex], _qualityScore);
+            DataService.UpdateCardDate(CurrentDeck.Cards[_currentIndex]);
+            Console.WriteLine("Quality score entered.");
+            NextCard();
+        }
+        else
+        {
+            Console.WriteLine("No score entered.");
+        }
+    }
+    
+    private async Task OnDeckSelectionChanged() // Loads new flashcards when deck changes
+    {
+        // Fetch flashcards for the selected deck
+        CurrentDeck.Cards = await DataService.GetFlashCardsAsync(SelectedDeckId);
+        CurrentDeck.DueToday = CurrentDeck.GetDueToday();
+        if (CurrentDeck.Cards.Any())
+        {
+            _currentIndex = 0;
+            _showAnswer = false;
+        }
+        else
+        {
+            _currentIndex = -1;
+        }
+        
+        StateHasChanged(); // Requests UI update
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _deckService = new DeckService() { DeckList = await DataService.GetDecksAsync() };
+    }
+
+    protected override async Task OnParametersSetAsync() // Used to navigate to page
+    {
+        try
+        {
+            if (SelectedDeckId > -1)
+            {
+                await LoadFlashCards(SelectedDeckId);
+                Console.WriteLine(SelectedDeckId);
+            }
+            else
+            {
+                await LoadFlashCards(_deckService.DeckList[0].DeckId);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        await LoadFlashCards(SelectedDeckId);
+    }
+    
+    // Retrieves all flashcards and creates DueToday deck for each deck
+    private async Task LoadFlashCards(int deckId) 
+    {
+        CurrentDeck.Cards = await DataService.GetFlashCardsAsync(deckId);
+        CurrentDeck.DueToday = CurrentDeck.GetDueToday();
+        if (CurrentDeck.Cards.Any())
+        {
+            _currentIndex = 0;
+            _showAnswer = false;
+        }
+        else
+        {
+            Console.WriteLine("Deck Empty!");
+        }
+        StateHasChanged();
+    }
+    
+    // Adds card to deck
+    void SubmitCard()
+    {
+        var flashcard = new Flashcard { FrontData = _frontCardInput, BackData = _backCardInput, Revisions = 0, NextRevisionDate = DateOnly.FromDateTime(DateTime.Now), CreationDate = DateOnly.FromDateTime(DateTime.Now), DeckId = _selectedAddCardDeckId};
+        DataService.AddCard(flashcard);
+        _currentIndex++;
+        StateHasChanged();
+    }
+
+    void ToggleFormVisibility()
+    {
+        _showForm = !_showForm;
+    }
+
+    void NextCard()
+    {
+        if (_currentIndex < CurrentDeck.DueToday.Count - 1) _currentIndex++;
+        _showAnswer = false;
+    }
+
+    void PreviousCard()
+    {
+        if (_currentIndex > 0) _currentIndex--;
+        _showAnswer = false;
+    }
+
+    void FlipCard()
+    {
+        if (_showAnswer == false) _showAnswer = true;
+        else _showAnswer = false;
+    }
+}

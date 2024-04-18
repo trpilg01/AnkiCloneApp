@@ -10,6 +10,56 @@ public class DataService
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection");
     }
+
+    public void UpdateCardInfo(Flashcard flashcard)
+    {
+        
+    }
+
+    public async Task<List<Flashcard>> GetAllCardsAsync()
+    {
+        var list = new List<Flashcard>();
+
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            await connection.OpenAsync();
+            using (var command = new MySqlCommand("SELECT * FROM CardInfo WHERE isDeleted = 0", connection))
+            {
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    try
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            /* Read Variables */
+                            int id = (int)reader["ID"];
+                            string frontData = (string)reader["FrontData"];
+                            string backData = (string)reader["BackData"];
+                            DateOnly creationDate = DateOnly.FromDateTime((DateTime)reader["CreationDate"]);
+                            DateOnly revisionDate = DateOnly.FromDateTime((DateTime)reader["RevisionDate"]);
+                            int revisions = (int)reader["Revisions"];
+    
+                            /* Create Flashcard */
+                            var flashcard = new Flashcard
+                            {
+                                FrontData = frontData, BackData = backData, Id = id, CreationDate = creationDate,
+                                NextRevisionDate = revisionDate, Revisions = revisions
+                            };
+                        
+                            /* Add flashcard to list */
+                            list.Add(flashcard);
+                        }
+                        Console.WriteLine("Flashcards successfully loaded");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+            }
+        }
+        return list;
+    }
     
     /* Get Flashcards by DeckId. Will need to alter function to search by review date */
     public async Task<List<Flashcard>> GetFlashCardsAsync(int deckID)
@@ -19,7 +69,7 @@ public class DataService
         using (var connection = new MySqlConnection(_connectionString))
         {
             await connection.OpenAsync();
-            using (var command = new MySqlCommand("SELECT * FROM CardInfo WHERE DeckID = @deckId", connection))
+            using (var command = new MySqlCommand("SELECT * FROM CardInfo WHERE DeckID = @deckId and isDeleted = 0", connection))
             {
                 command.Parameters.AddWithValue("@deckId", deckID);
                 using (var reader = await command.ExecuteReaderAsync())
@@ -194,6 +244,31 @@ public class DataService
                 throw;
             }
 
+        }
+    }
+
+    public void DeleteCard(Flashcard flashcard)
+    {
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            try
+            {
+                connection.Open();
+                using (var command = new MySqlCommand("UPDATE CardInfo " +
+                                                      "SET isDeleted = 1 " +
+                                                      "WHERE ID = @id", connection))
+                {
+                    command.Parameters.AddWithValue("@id", flashcard.Id);
+                    command.ExecuteNonQuery();
+                    
+                    Console.WriteLine($" Flashcard ID: {flashcard.Id} Deleted");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }

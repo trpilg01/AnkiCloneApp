@@ -29,6 +29,7 @@
 
 <div class="container" style="padding: 5px; background-color: white; border-radius: 20px; width: fit-content; box-shadow: 5px 5px 15px rgba(0,0,0,0.2)">
     <h4 style="padding: 5px;font-family: FreeSans,sans-serif;text-align: center; text-decoration: underline">Decks</h4>
+    
     <div style="text-align: center">    
         <button @onclick="ToggleAddDeckVisibility" style="padding:5px; box-shadow: 5px 5px 15px rgba(0,0,0,0.2) ;text-align: center;background-color: rgba(139,57,255,0.87); border-radius: 10px">Add Deck</button>
     </div>
@@ -47,7 +48,7 @@
 
     <table class="table" style="background-color: white;">
         <thead>
-        <tr style="max-width: inherit">
+        <tr style="max-width: inherit; text-decoration: underline">
             <th style="padding-right: 75px; padding-left: 75px">Deck</th>
             <th style="padding-right: 75px; padding-left: 75px">Due</th>
             <th style="padding-right: 75px; padding-left: 75px">Deck Size</th>
@@ -97,19 +98,17 @@
     private string _addDeckName = "";
     private bool _showAddDeckField = false;
     private DeckService _deckService; // Could possibly remove DeckService class all together.
-    private List<Flashcard> _cardsDueToday;
     
-
     protected override async Task OnInitializedAsync()
     {
         await Task.Delay(500);
-        
-        _deckService = new DeckService();
-        _deckService.DeckList = await DataService.GetDecksAsync(); // Could replace with a List<Deck>
+
+        _deckService = new DeckService { DeckList = await DataService.GetDecksAsync() };
 
         foreach (var deck in _deckService.DeckList)
         {
             deck.Cards = await DataService.GetFlashCardsAsync(deck.DeckId);
+            deck.DueToday = deck.GetDueToday(); 
         }
     }
     
@@ -123,8 +122,8 @@
         DataService.AddDeck(_addDeckName);
     }
 
-    void ReviewDeck(int deckId)
+    void ReviewDeck(int selectedDeckId)
     {
-        NavigationManager.NavigateTo($"/flashcards/{deckId}");
+        NavigationManager.NavigateTo($"/review/{selectedDeckId}");
     }
 }
