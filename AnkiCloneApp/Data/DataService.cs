@@ -1,3 +1,4 @@
+using System.Data;
 using MySql.Data.MySqlClient;
 
 namespace AnkiCloneApp.Data;
@@ -10,20 +11,47 @@ public class DataService
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection");
     }
-
-    public void UpdateCardInfo(Flashcard flashcard)
+    
+    public async Task UpdateAllFlashcards(List<Flashcard> flashcards) // Used for editing all flashcards on review page
     {
-        
+        try
+        {
+            using (var connection = new MySqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                foreach (var flashcard in flashcards)
+                {
+                    using (var command = new MySqlCommand("UpdateFlashcards", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                
+                        // Add parameters
+                        command.Parameters.Add(new MySqlParameter("p_ID", flashcard.Id));
+                        command.Parameters.Add(new MySqlParameter("p_FrontData", flashcard.FrontData));
+                        command.Parameters.Add(new MySqlParameter("p_BackData", flashcard.BackData));
+                        command.Parameters.Add(new MySqlParameter("p_Revisions", flashcard.Revisions));
+                    
+                        // Execute the command
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
-    public async Task<List<Flashcard>> GetAllCardsAsync()
+    public async Task<List<Flashcard>> GetAllCardsAsync() 
     {
         var list = new List<Flashcard>();
 
         using (var connection = new MySqlConnection(_connectionString))
         {
             await connection.OpenAsync();
-            using (var command = new MySqlCommand("SELECT * FROM CardInfo WHERE isDeleted = 0", connection))
+            using (var command = new MySqlCommand("SELECT * FROM CardInfo WHERE isDeleted = 0", connection)) // Only gets cards that are not deleted
             {
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -179,7 +207,7 @@ public class DataService
             try
             {
                 await connection.OpenAsync();
-                using (var command = new MySqlCommand("SELECT * FROM Decks", connection))
+                using (var command = new MySqlCommand("SELECT * FROM Decks WHERE isDeleted = 0", connection))
                 {
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -244,6 +272,32 @@ public class DataService
                 throw;
             }
 
+        }
+    }
+
+    public async Task DeleteDeck(int deckId)
+    {
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            await connection.OpenAsync();
+            try
+            {
+                using (var command = new MySqlCommand("DeleteDeck", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    
+                    // Add parameters
+                    command.Parameters.Add(new MySqlParameter("p_Id", deckId));
+                    
+                    // Execute the command
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 

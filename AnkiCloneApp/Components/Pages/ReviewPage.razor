@@ -42,48 +42,70 @@
     }
 </style>
 
+
 <div class="container" style="background-color: white; border-radius: 20px">
-    <div class="container">
-        <h3 style="text-align: center">Deck Name Placeholder</h3>
-        <div class="row" style="height: 100%">
+    
+    <!-- Deck Name Header -->
+    @if (CurrentDeck != null)
+    {
+        <h3 style="text-decoration: underline; padding: 10px">@CurrentDeck.Name</h3>
+        <div class="btn-group" role="group">
+            <!-- Add button --> 
+            <button type="button" class="btn btn-primary btn-sm" @onclick="ToggleFormVisibility" style="justify-content: flex-end">Add Card</button>
+            
+            @if (_showForm)
+            {
+                <form>
+                    <div>
+                        <label for="_frontCardInput">Front</label>
+                        <input type="text" id="_frontCardInput" @bind="_frontCardInput"/>
+                    </div>
 
-            <!-- Add and Delete buttons -->
-            <div class="col-sm" style="text-align: center">
-                <button type="button" class="btn btn-danger" style="padding: 5px" @onclick="DeleteCurrentCard">Delete Card</button>
-                <div class="btn-group-vertical" role="group" style="vertical-align: center; margin: auto; padding: 5px">
-                    <button type="button" class="btn btn-primary" @onclick="ToggleFormVisibility">Add Card</button>
-                    @if (_showForm)
-                    {
-                        <form>
-                            <div>
-                                <label for="_frontCardInput">Front</label>
-                                <input type="text" id="_frontCardInput" @bind="_frontCardInput"/>
-                            </div>
-                            
-                            <div>
-                                <label for="_backCardInput">Back</label>
-                                <input type="text" id="_backCardInput" @bind="_backCardInput"/>
-                            </div>
-                            
-                            <div>
-                                <label>Deck: </label>
-                                <select @bind="_selectedAddCardDeckId">
-                                    @foreach (var deck in _deckService.DeckList)
-                                    {
-                                        <option value="@deck.DeckId">@deck.Name</option>
-                                    }
-                                </select>
-                            </div>
-                            <button @onclick="SubmitCard" type="submit">Submit Card</button>
-                        </form>
-                    }
-                </div>
-            </div>
+                    <div>
+                        <label for="_backCardInput">Back</label>
+                        <input type="text" id="_backCardInput" @bind="_backCardInput"/>
+                    </div>
 
-            <!-- Actual flashcard buttons -->
-            <div class="col-lg" style="text-align: center">
-                @if (CurrentDeck.DueToday.Any())
+                    <div>
+                        <label>Deck: </label>
+                        <select @bind="_selectedAddCardDeckId">
+                            @foreach (var deck in _deckService.DeckList)
+                            {
+                                <option value="@deck.DeckId">@deck.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button @onclick="SubmitCard" type="submit">Submit Card</button>
+                </form>
+            }
+            
+            <!-- Drop down menu for decks -->
+            <select @bind-value="SelectedDeckId" @bind-value:event="oninput">
+                @foreach (var deck in _deckService.DeckList)
                 {
+                    <option value="@deck.DeckId">@deck.Name</option>
+                }
+            </select>
+        </div>
+    }
+    else
+    {
+        <p>Loading...</p>
+    }
+    
+    <!-- Deck Cards -->
+    <div class="container" style="padding: 5px">
+        <div class="row" style="height: 100%">
+            @if (CurrentDeck.DueToday.Any())
+            {
+                <!-- Add and Delete buttons -->
+                <div class="col-sm" style="text-align: center; ">
+                    <button type="button" class="btn btn-danger" style="padding: 5px; vertical-align: center" @onclick="DeleteCurrentCard">Delete Card</button>
+                </div>
+
+                <!-- Actual flashcard buttons -->
+                <div class="col-lg" style="text-align: center">
+
                     <div class="flashcard">
                         @if (_showAnswer == false) /* Check if should show the answer or not */
                         {
@@ -94,31 +116,31 @@
                             <p>@CurrentDeck.DueToday[_currentIndex].GetBack()</p>
                         }
                     </div>
-                }
-                else
-                {
-                    <p>Deck is empty.</p>
-                }
-                <div class="btn-group" style="align-items: center">
-                    <button class="btn btn-primary" @onclick="PreviousCard">Previous</button>
-                    <button class="btn btn-secondary" @onclick="FlipCard">Flip Card</button>
-                    <button class="btn btn-primary" @onclick="NextCard">Next Card</button>
-                </div>
-            </div>
 
-            <div class="col-sm" style="align-content: center">
-                <!-- Quality score buttons-->
-                <div class="btn-group-vertical" role="group">
-                    <button type="button" class="btn btn-success" @onclick="() => { _qualityScore = 5; }">Perfect</button>
-                    <button type="button" class="btn btn-info" @onclick="() => { _qualityScore = 4; }">Good</button>
-                    <button type="button" class="btn btn-secondary" @onclick="() => { _qualityScore = 3; }">Neutral</button>
-                    <button type="button" class="btn btn-warning" @onclick="() => { _qualityScore = 2; }">Hard</button>
-                    <button type="button" class="btn btn-danger" @onclick="() => { _qualityScore = 1; }">Again</button>
-                    <button type="button" class="btn btn-dark" @onclick="SubmitAnsweredCard" style="padding-top: 10px">Submit</button>
+                    <div class="btn-group" style="align-items: center">
+                        <button class="btn btn-primary" @onclick="PreviousCard">Previous</button>
+                        <button class="btn btn-secondary" @onclick="FlipCard">Flip Card</button>
+                        <button class="btn btn-primary" @onclick="NextCard">Next Card</button>
+                    </div>
                 </div>
-            </div>
+
+                <div class="col-sm" style="align-content: center">
+                    <!-- Quality score buttons-->
+                    <div class="btn-group-vertical" role="group">
+                        <button type="button" class="btn btn-success" @onclick="() => { _qualityScore = 5; }">Perfect</button>
+                        <button type="button" class="btn btn-info" @onclick="() => { _qualityScore = 4; }">Good</button>
+                        <button type="button" class="btn btn-secondary" @onclick="() => { _qualityScore = 3; }">Neutral</button>
+                        <button type="button" class="btn btn-warning" @onclick="() => { _qualityScore = 2; }">Hard</button>
+                        <button type="button" class="btn btn-danger" @onclick="() => { _qualityScore = 1; }">Again</button>
+                        <button type="button" class="btn btn-dark" @onclick="SubmitAnsweredCard" style="padding-top: 10px">Submit</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <h5 style="text-align: center; vertical-align: center; padding-top: 30px">Deck is empty</h5>
+            }
         </div>
-    
     </div>
 </div>
 
@@ -143,7 +165,7 @@
             if (_selectedDeckId != value)
             {
                 _selectedDeckId = value;
-                _ = OnDeckSelectionChanged();
+                _ = LoadFlashCards(_selectedDeckId);
             }
         } 
     }
@@ -157,7 +179,7 @@
     private void DeleteCurrentCard()
     {
         DataService.DeleteCard(CurrentDeck.Cards[_currentIndex]);
-        if (_currentIndex < CurrentDeck.Cards.Count - 1) // Remove card and 
+        if (_currentIndex < CurrentDeck.Cards.Count - 1)  
         {
             CurrentDeck.Cards.Remove(CurrentDeck.Cards[_currentIndex]);
             NextCard();
@@ -170,6 +192,7 @@
         }
     }
     
+    /* Updates review date and revision count then moves to next card in deck */
     private void SubmitAnsweredCard() // Update current card's review date
     {
         if (_qualityScore > -1)
@@ -185,34 +208,18 @@
         }
     }
     
-    private async Task OnDeckSelectionChanged() // Loads new flashcards when deck changes
-    {
-        // Fetch flashcards for the selected deck
-        CurrentDeck.Cards = await DataService.GetFlashCardsAsync(SelectedDeckId);
-        CurrentDeck.DueToday = CurrentDeck.GetDueToday();
-        if (CurrentDeck.Cards.Any())
-        {
-            _currentIndex = 0;
-            _showAnswer = false;
-        }
-        else
-        {
-            _currentIndex = -1;
-        }
-        
-        StateHasChanged(); // Requests UI update
-    }
-
+    /* Instantiate a new deck list */
     protected override async Task OnInitializedAsync()
     {
         _deckService = new DeckService() { DeckList = await DataService.GetDecksAsync() };
     }
-
-    protected override async Task OnParametersSetAsync() // Used to navigate to page
+    
+    /* Used to navigate to page */
+    protected override async Task OnParametersSetAsync()
     {
         try
         {
-            if (SelectedDeckId > -1)
+            if (SelectedDeckId > -1)  // If there is a valid deckID then load the page with that deck selected
             {
                 await LoadFlashCards(SelectedDeckId);
                 Console.WriteLine(SelectedDeckId);
@@ -231,10 +238,11 @@
     }
     
     // Retrieves all flashcards and creates DueToday deck for each deck
-    private async Task LoadFlashCards(int deckId) 
+    private async Task LoadFlashCards(int deckId)
     {
         CurrentDeck.Cards = await DataService.GetFlashCardsAsync(deckId);
         CurrentDeck.DueToday = CurrentDeck.GetDueToday();
+        CurrentDeck.Name = _deckService.GetDeckName(deckId);
         if (CurrentDeck.Cards.Any())
         {
             _currentIndex = 0;

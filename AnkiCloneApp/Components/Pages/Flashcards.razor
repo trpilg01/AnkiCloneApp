@@ -20,8 +20,8 @@
 <div class="container" style="background-color: white; border-radius: 20px; padding: 10px; text-align: center">
     <h3 style="text-align: center">All Flashcards</h3>
     
-    <div>
-        <button class="btn btn-primary" @onclick="EnableEditing">Edit Cards</button>
+    <div style="padding-bottom: 10px">
+        <button class="btn btn-primary btn-sm" @onclick="EnableEditing" >Edit Cards</button>
     </div>
     
     @if (_allCards.Any())
@@ -50,7 +50,7 @@
                         <td><button class="btn btn-link" @onclick="() => DeleteCard(card)">Delete</button></td>
                     </tr>
                 }
-                else // Edit cards
+                else // Edit mode on 
                 {
                     <tr>
                         <th scope="row">@card.Id</th>
@@ -70,7 +70,7 @@
         
         @if (enableEditing)
         {
-            <button class="btn btn-secondary">Save Changes</button>
+            <button class="btn btn-secondary" @onclick="SaveFlashcardEdits" >Save Changes</button> 
         }
     }
     else
@@ -89,13 +89,18 @@
         enableEditing = false;
     }
 
-    void EnableEditing()
+    void EnableEditing() // Changes edit mode
     {
         enableEditing = !enableEditing;
-        Console.WriteLine("True");
     }
 
-    void DeleteCard(Flashcard card)
+    private async Task SaveFlashcardEdits() // Saves edits and disables edit mode
+    {
+        await DataService.UpdateAllFlashcards(_allCards);
+        enableEditing = !enableEditing;
+    }
+
+    void DeleteCard(Flashcard card) // Deletes card 
     {
         _allCards.Remove(card);
         DataService.DeleteCard(card);

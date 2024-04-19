@@ -50,7 +50,7 @@ public class Deck
         List<Flashcard> flashcards = new List<Flashcard>();
         foreach (var card in Cards)
         {
-            if (card.NextRevisionDate == DateOnly.FromDateTime(DateTime.Now))
+            if (card.NextRevisionDate <= (DateOnly.FromDateTime(DateTime.Now) ))
             {
                 flashcards.Add(card);
             }
